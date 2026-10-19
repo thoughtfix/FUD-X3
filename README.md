@@ -171,6 +171,14 @@ Signature data traces back to public registries: the IEEE OUI registry, the
 Bluetooth SIG assigned numbers, ASTM F3411 / Open Drone ID, and the FCC ID
 database.
 
+If FUD-X3 is not quite what you are after:
+
+- Got an X4? Look at [biscuit](https://github.com/yattsu/biscuit), a broader
+  multi-tool firmware for the larger Xteink X4.
+- Need to keep yours a reader? Look at
+  [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader),
+  the e-reader firmware these X-series devices are built around.
+
 ## Responsible use
 
 FUD-X3 is receive-only and never transmits or attacks, but it is still a radio
