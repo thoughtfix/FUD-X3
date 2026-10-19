@@ -342,10 +342,10 @@ static uint8_t daysInMonth(uint16_t y, uint8_t m) {
 
 void SetClockScreen::open() {
   field_ = 0;
-  // Start from the stored time only if the clock has actually been set; an
-  // unset RTC holds garbage, so fall back to the 2026-01-01 floor instead.
-  if (!clk_ || !clk_->isSet() || !clk_->get(t_)) t_ = {2026, 1, 1, 0, 0, 0};
-  if (t_.year < 2026) t_ = {2026, 1, 1, 0, 0, 0};
+  // Only fall back to the 2026-01-01 floor when the clock is unset or already
+  // reads earlier than that; a clock already set to a later date is kept as-is.
+  if (!clk_ || !clk_->get(t_) || !clk_->isSet() || t_.year < 2026)
+    t_ = {2026, 1, 1, 0, 0, 0};
 }
 
 void SetClockScreen::adjust(int delta) {
@@ -406,14 +406,21 @@ void SetClockScreen::body(App& app, int topY, int bottomY) {
   }
   const int uy = rowY + gfx::lineH(4) - 2;
   c.fillRect(startX, uy, endX - startX, 4, FUD_BLACK);
+
+  // The hint bar only labels the front buttons, so spell out the side buttons.
+  const int hy = timeY + gfx::lineH(4) + 28;
+  gfx::clippedLine(c, X, hy, FUD_W - X, "Side buttons pick the field", 3,
+                   FUD_BLACK);
 }
 
 void SetClockScreen::onButton(Btn b, App& app) {
   switch (b) {
     case Btn::A: adjust(+1); app.redraw(); break;
     case Btn::B: adjust(-1); app.redraw(); break;
-    case Btn::D: field_ = (field_ + 1) % 5; app.redraw(); break;
-    case Btn::C:
+    case Btn::Prev: field_ = (field_ + 5 - 1) % 5; app.redraw(); break;  // prev field
+    case Btn::Next: field_ = (field_ + 1) % 5; app.redraw(); break;      // next field
+    case Btn::C: app.back(); break;  // Cancel: leave without saving
+    case Btn::D:                     // Save
       if (clk_) {
         t_.sec = 0;
         clk_->set(t_);
@@ -425,12 +432,12 @@ void SetClockScreen::onButton(Btn b, App& app) {
 }
 
 void SetClockScreen::hints(const char* out[6]) {
-  out[0] = "Up";    // A
-  out[1] = "Down";  // B
-  out[2] = "Save";  // C
-  out[3] = "Next";  // D
-  out[4] = "";
-  out[5] = "";
+  out[0] = "Up";      // A: raise the selected field
+  out[1] = "Down";    // B: lower it
+  out[2] = "Cancel";  // C
+  out[3] = "Save";    // D
+  out[4] = "Field";   // Prev (left side): previous field
+  out[5] = "Field";   // Next (right side): next field
 }
 
 // ---------- SdCardScreen ----------

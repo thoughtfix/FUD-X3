@@ -176,8 +176,8 @@ If FUD-X3 is not quite what you are after:
 - Got an X4? Look at [biscuit](https://github.com/yattsu/biscuit), a broader
   multi-tool firmware for the larger Xteink X4.
 - Need to keep yours a reader? Look at
-  [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader),
-  the e-reader firmware these X-series devices are built around.
+  [Radio Ink](https://github.com/dagnazty/Radio-Ink), which keeps the full
+  CrossPoint e-reader and adds a Wi-Fi / BLE toolkit (X3 and X4).
 
 ## Responsible use
 
