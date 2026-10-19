@@ -52,8 +52,9 @@ promiscuous pass that detects deauth floods), and back again.
 ![Buttons](docs/images/buttons.jpg)
 
 Four buttons sit on the front (A, B, C, D) with two more on the sides
-(Previous and Next), and a power button on the top right. Each screen shows a
-hint bar so you always know what the active buttons do.
+(Previous and Next), and a power button on the top right. Every screen shows a
+title bar with the current time and battery level across the top, and a hint bar
+across the bottom so you always know what the active buttons do.
 
 - Home screen: A or Left opens Settings, D or Right opens Scan Summaries, B
   acknowledges an active alert.
@@ -169,6 +170,12 @@ FUD-X3 is built on the work of others, with credit.
 Signature data traces back to public registries: the IEEE OUI registry, the
 Bluetooth SIG assigned numbers, ASTM F3411 / Open Drone ID, and the FCC ID
 database.
+
+## Responsible use
+
+FUD-X3 is receive-only and never transmits or attacks, but it is still a radio
+monitoring tool. Use it lawfully and respectfully. See
+[DISCLAIMERS.md](DISCLAIMERS.md).
 
 ## AI disclosure
 
