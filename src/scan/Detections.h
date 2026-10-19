@@ -33,10 +33,12 @@ class Detections {
   int airtagBeacons() const;  // distinct active AirTag MACs
   uint32_t seq() const { return seq_; }  // bumps whenever counts change
 
-  // Mark "now" as the baseline: everything already seen is known, so hasAlert()
-  // only trips on devices that first appear after this point (ack / snooze).
-  void baseline(uint32_t now) { baselineTime_ = now; ++seq_; }
-  bool hasAlert(Cat c) const;  // an alertable device in c, newer than baseline
+  // Acknowledge: snapshot every threat currently present as "known" so Zuse
+  // settles. Keyed by threat signature (category + label), not by address, so
+  // a hacker tool that rotates its BLE MAC stays acked instead of re-alerting
+  // on every hop. A genuinely new kind of threat (a new label) still trips it.
+  void baseline(uint32_t now);
+  bool hasAlert(Cat c) const;  // an un-acked threat is present in category c
 
   // Fill `out` with the n-th active entry in category c (slot order, with the
   // AirTag aggregate last for Trackers). Returns false if n is out of range.
@@ -68,10 +70,21 @@ class Detections {
     uint32_t last;
   };
 
+  // Acknowledged threat signatures (category + label). hasAlert() stays quiet
+  // for any threat whose signature is in here until the next ack rebuilds it.
+  struct AckSig {
+    bool used;
+    Cat cat;
+    const char* label;
+  };
+  static constexpr int MAXACK = 32;
+
   Det d_[MAXDET] = {};
   Air air_[MAXAIR] = {};
+  AckSig ack_[MAXACK] = {};
   uint32_t seq_ = 0;
-  uint32_t baselineTime_ = 0;
 
   bool applyAirtag(const uint8_t key[6], uint32_t now);  // true if a new MAC
+  bool isAcked(Cat c, const char* label) const;
+  void ackCurrent();  // replace ack_ with a snapshot of what's present now
 };

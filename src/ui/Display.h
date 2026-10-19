@@ -16,6 +16,10 @@ static constexpr int16_t FUD_H = 792;  // portrait logical height
 static constexpr uint16_t FUD_WHITE = 1;
 static constexpr uint16_t FUD_BLACK = 0;
 
+// Total e-ink refreshes since boot (any of full/half/fast). A liveness/power
+// signal: the battery test logs it so a run shows the panel really was updating.
+extern uint32_t gPanelRefreshes;
+
 class Display {
  public:
   Display();

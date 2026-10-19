@@ -342,14 +342,17 @@ static uint8_t daysInMonth(uint16_t y, uint8_t m) {
 
 void SetClockScreen::open() {
   field_ = 0;
-  if (!clk_ || !clk_->get(t_)) t_ = {2026, 1, 1, 0, 0, 0};
+  // Start from the stored time only if the clock has actually been set; an
+  // unset RTC holds garbage, so fall back to the 2026-01-01 floor instead.
+  if (!clk_ || !clk_->isSet() || !clk_->get(t_)) t_ = {2026, 1, 1, 0, 0, 0};
+  if (t_.year < 2026) t_ = {2026, 1, 1, 0, 0, 0};
 }
 
 void SetClockScreen::adjust(int delta) {
   switch (field_) {
     case 0:
       t_.year = (uint16_t)(t_.year + delta);
-      if (t_.year < 2000) t_.year = 2000;
+      if (t_.year < 2026) t_.year = 2026;  // never set lower than 2026
       if (t_.year > 2099) t_.year = 2099;
       break;
     case 1:
@@ -492,12 +495,13 @@ void BatteryTestScreen::logRow(uint32_t elapsedS) {
   sd_->ensureDir(kLogDir);
   char path[48];
   snprintf(path, sizeof(path), "%s/battest.csv", kLogDir);
-  if (!sd_->exists(path)) sd_->appendLine(path, "elapsed_s,pct,mv,ma,time");
+  if (!sd_->exists(path))
+    sd_->appendLine(path, "elapsed_s,pct,mv,ma,refreshes,time");
   char ts[24];
   if (!clk_ || !clk_->stamp(ts, sizeof(ts))) snprintf(ts, sizeof(ts), "-");
-  char row[80];
-  snprintf(row, sizeof(row), "%lu,%u,%u,%d,%s", (unsigned long)elapsedS,
-           gBatt.pct, gBatt.mv, gBatt.ma, ts);
+  char row[96];
+  snprintf(row, sizeof(row), "%lu,%u,%u,%d,%lu,%s", (unsigned long)elapsedS,
+           gBatt.pct, gBatt.mv, gBatt.ma, (unsigned long)gPanelRefreshes, ts);
   sd_->appendLine(path, row);
 }
 

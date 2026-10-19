@@ -43,6 +43,26 @@ static void drawBattery(Adafruit_GFX& c, int rightX, int midY) {
   }
 }
 
+// The wall clock, right-aligned ending at rightEdgeX (just left of the battery
+// gauge), vertically centered on midY. Shows HH:MM, or "set clock" when unset.
+static void drawClock(Adafruit_GFX& c, int rightEdgeX, int midY, Clock* clk) {
+  char buf[12];
+  int size;
+  RtcTime t;
+  if (clk && clk->isSet() && clk->get(t)) {
+    snprintf(buf, sizeof(buf), "%02u:%02u", t.hour, t.min);
+    size = 3;
+  } else {
+    snprintf(buf, sizeof(buf), "set clock");
+    size = 2;
+  }
+  const int w = gfx::textW(c, buf, size);
+  int x = rightEdgeX - w;
+  if (x < FUD_W / 2) x = FUD_W / 2;  // never crowd the title
+  gfx::clippedLine(c, x, midY - gfx::lineH(size) / 2, rightEdgeX, buf, size,
+                   FUD_BLACK);
+}
+
 void App::setHome(Screen* s) {
   home_ = s;
   sp_ = 0;
@@ -54,20 +74,21 @@ void App::setHome(Screen* s) {
 void App::go(Screen* s) {
   if (sp_ < (int)(sizeof(stack_) / sizeof(stack_[0]))) stack_[sp_++] = s;
   dirty_ = true;
-  next_ = Refresh::Half;
+  // Home gets a clean full wash; every other screen a fast partial update.
+  next_ = (s == home_) ? Refresh::Full : Refresh::Fast;
 }
 
 void App::back() {
   if (sp_ > 1) --sp_;
   dirty_ = true;
-  next_ = Refresh::Half;
+  next_ = (cur() == home_) ? Refresh::Full : Refresh::Fast;
 }
 
 void App::home() {
   sp_ = 0;
   if (home_) stack_[sp_++] = home_;
   dirty_ = true;
-  next_ = Refresh::Half;
+  next_ = Refresh::Full;  // returning home always de-ghosts with a clean wash
 }
 
 // Center a single clipped line within [boxX, boxX+boxW).
@@ -122,7 +143,10 @@ void App::render() {
   d_.clear();
 
   gfx::clippedLine(c, PAD, PAD, FUD_W - PAD, s->title(), TITLE_SIZE, FUD_BLACK);
-  drawBattery(c, FUD_W - PAD, PAD + gfx::lineH(TITLE_SIZE) / 2);
+  const int midY = PAD + gfx::lineH(TITLE_SIZE) / 2;
+  drawBattery(c, FUD_W - PAD, midY);
+  // Clock sits just left of the battery gauge (gauge is 46+5px wide).
+  drawClock(c, FUD_W - PAD - 51 - 10, midY, clk_);
   c.drawFastHLine(0, titleH() - 2, FUD_W, FUD_BLACK);
 
   s->body(*this, titleH() + PAD, FUD_H - hintH() - PAD);

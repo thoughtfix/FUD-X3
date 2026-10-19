@@ -61,12 +61,42 @@ bool Detections::applyAirtag(const uint8_t key[6], uint32_t now) {
   return true;
 }
 
+bool Detections::isAcked(Cat c, const char* label) const {
+  if (!label) return false;
+  for (int i = 0; i < MAXACK; ++i)
+    if (ack_[i].used && ack_[i].cat == c && ack_[i].label &&
+        strcmp(ack_[i].label, label) == 0)
+      return true;
+  return false;
+}
+
+void Detections::ackCurrent() {
+  for (int i = 0; i < MAXACK; ++i) ack_[i].used = false;  // rebuild from scratch
+  auto add = [&](Cat c, const char* lab) {
+    if (!lab) return;
+    if (isAcked(c, lab)) return;  // dedup
+    for (int i = 0; i < MAXACK; ++i)
+      if (!ack_[i].used) {
+        ack_[i] = {true, c, lab};
+        return;
+      }
+  };
+  for (int i = 0; i < MAXDET; ++i)
+    if (d_[i].used) add(d_[i].cat, d_[i].label);
+  if (airtagBeacons() > 0) add(Cat::Tracker, AIRTAG_LABEL);
+}
+
+void Detections::baseline(uint32_t /*now*/) {
+  ackCurrent();
+  ++seq_;
+}
+
 bool Detections::hasAlert(Cat c) const {
   for (int i = 0; i < MAXDET; ++i)
-    if (d_[i].used && d_[i].cat == c && d_[i].first > baselineTime_) return true;
-  if (c == Cat::Tracker)
-    for (int i = 0; i < MAXAIR; ++i)
-      if (air_[i].used && air_[i].first > baselineTime_) return true;
+    if (d_[i].used && d_[i].cat == c && !isAcked(c, d_[i].label)) return true;
+  if (c == Cat::Tracker && airtagBeacons() > 0 &&
+      !isAcked(Cat::Tracker, AIRTAG_LABEL))
+    return true;
   return false;
 }
 

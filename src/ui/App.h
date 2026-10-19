@@ -6,6 +6,7 @@
 #pragma once
 #include "Display.h"
 #include "Input.h"
+#include "../time/Clock.h"
 
 class App;
 
@@ -44,6 +45,7 @@ class App {
   void redraw() { dirty_ = true; }
 
   void setPowerHandler(void (*fn)()) { onPower_ = fn; }
+  void setClock(Clock* c) { clk_ = c; }  // for the title-bar clock
 
   void render();  // draw the current screen now
   void tick();    // poll input, dispatch, redraw if needed
@@ -63,6 +65,7 @@ class App {
   Display& d_;
   Input& in_;
   void (*onPower_)() = nullptr;
+  Clock* clk_ = nullptr;
   Screen* home_ = nullptr;
   Screen* stack_[8] = {nullptr};
   int sp_ = 0;  // stack_[sp_-1] is current; sp_ >= 1 once home is set

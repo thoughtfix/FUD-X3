@@ -127,6 +127,7 @@ void setup() {
 
   app.setHome(&zuse);
   app.setPowerHandler(sleepNow);
+  app.setClock(&clk);
   app.render();
 
   scanner.begin();  // passive BLE + WiFi rotation on its own task

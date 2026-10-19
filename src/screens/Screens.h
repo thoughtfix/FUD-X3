@@ -37,6 +37,7 @@ class ZuseScreen : public Screen {
   void onButton(Btn b, App& app) override;
   void hints(const char* out[6]) override;
   bool wantsLiveRefresh() override { return true; }
+  uint32_t timedRefreshMs() override { return 60000; }  // keep the clock current
 
  private:
   bool alertActive() const;

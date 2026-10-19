@@ -25,11 +25,22 @@ void Display::begin() {
   clear();
 }
 
-void Display::pushFull() { eink_.displayBuffer(EInkDisplay::FULL_REFRESH); }
+uint32_t gPanelRefreshes = 0;
 
-void Display::pushHalf() { eink_.displayBuffer(EInkDisplay::HALF_REFRESH); }
+void Display::pushFull() {
+  ++gPanelRefreshes;
+  eink_.displayBuffer(EInkDisplay::FULL_REFRESH);
+}
 
-void Display::pushFast() { eink_.displayBuffer(EInkDisplay::FAST_REFRESH); }
+void Display::pushHalf() {
+  ++gPanelRefreshes;
+  eink_.displayBuffer(EInkDisplay::HALF_REFRESH);
+}
+
+void Display::pushFast() {
+  ++gPanelRefreshes;
+  eink_.displayBuffer(EInkDisplay::FAST_REFRESH);
+}
 
 void Display::screenshot() {
   const uint8_t* b = eink_.getFrameBuffer();
