@@ -22,6 +22,7 @@
 #include "scan/WifiApList.h"
 #include "power/Fuel.h"
 #include "Config.h"
+#include "Version.h"
 
 static Display display;
 static Input input;
@@ -84,7 +85,7 @@ static void batteryDeadSleep() {
 void setup() {
   Serial.begin(115200);
   delay(150);
-  Serial.println(F("[FUD-X3] boot"));
+  Serial.println(F("[FUD-X3] boot " FUDX3_VERSION));
 
   display.begin();
   // The e-ink driver inits SPI write-only (MISO disabled) and a second

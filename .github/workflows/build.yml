@@ -1,0 +1,60 @@
+name: build
+
+# Builds the X3 app image on every push/PR to main, and on a version tag
+# (v*) also publishes a GitHub release with the firmware attached.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write  # needed to create releases on tag builds
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive  # deps/community-sdk HAL
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install --upgrade platformio
+          pip install -r requirements.txt
+
+      - name: Build (env:x3)
+        run: pio run -e x3
+
+      - name: Stage artifact
+        run: |
+          mkdir -p dist
+          cp .pio/build/x3/firmware.bin "dist/fud-x3-${GITHUB_REF_NAME}.bin"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fud-x3-${{ github.ref_name }}
+          path: dist/*.bin
+
+      - name: Publish release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: FUD-X3 ${{ github.ref_name }}
+          files: dist/*.bin
+          body: |
+            Passive counter-surveillance firmware for the XTEINK X3.
+
+            Flash the **application slot only**, at offset `0x10000`, with esptool
+            (do not use `pio run -t upload`, which overwrites the stock
+            bootloader). Back up your stock firmware first. See the README for
+            full build/flash steps.

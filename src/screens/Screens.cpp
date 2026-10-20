@@ -1,6 +1,7 @@
 #include "Screens.h"
 #include "../ui/Gfx.h"
 #include "../Config.h"
+#include "../Version.h"
 #include "../scan/IgnoreList.h"
 #include "../art/ZuseFaces.h"
 #include "../power/Battery.h"
@@ -173,9 +174,9 @@ void ZuseScreen::hints(const char* out[6]) {
 
 // ---------- SettingsScreen ----------
 
-static const char* kSettings[] = {"Set Clock",    "Logging",     "Auto Sleep",
-                                  "Baseline",     "Reset Counts", "Ignore List",
-                                  "SD Card",      "Delete Logs", "Battery Test"};
+static const char* kSettings[] = {
+    "Set Clock",   "Logging",     "Auto Sleep",   "Baseline",     "Reset Counts",
+    "Ignore List", "SD Card",     "Delete Logs",  "Battery Test", "About"};
 
 int SettingsScreen::count() {
   return (int)(sizeof(kSettings) / sizeof(kSettings[0]));
@@ -230,6 +231,11 @@ void SettingsScreen::onSelect(int i, App& app) {
   } else if (!strcmp(item, "Battery Test") && batteryTest_) {
     batteryTest_->open();
     app.go(batteryTest_);
+  } else if (!strcmp(item, "About") && info_) {
+    info_->open("About", "FUD-X3 " FUDX3_VERSION
+                         ". Passive, receive-only counter-surveillance "
+                         "firmware. github.com/thoughtfix/FUD-X3");
+    app.go(info_);
   } else if (!strcmp(item, "Ignore List") && ignoreList_) {
     ignoreList_->open();
     app.go(ignoreList_);
