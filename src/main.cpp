@@ -154,6 +154,19 @@ void loop() {
   if (battCritical() && !(app.current() && app.current()->inhibitSleep()))
     batteryDeadSleep();
 
+  // New calendar day: clear the cumulative count tally (lists are untouched).
+  // Throttled so we aren't hammering the RTC over I2C.
+  static uint32_t lastDayCheck = 0;
+  static char lastDay[12] = {0};
+  if (now - lastDayCheck > 30000) {
+    lastDayCheck = now;
+    char day[12];
+    if (clk.isSet() && clk.dateStamp(day, sizeof(day))) {
+      if (lastDay[0] && strcmp(day, lastDay) != 0) detections.resetCounts();
+      strncpy(lastDay, day, sizeof(lastDay) - 1);
+    }
+  }
+
   // Detect a card inserted after boot, without blocking.
   static uint32_t lastSdCheck = 0;
   if (!sd.present() && now - lastSdCheck > 2000) {

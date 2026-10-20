@@ -37,6 +37,7 @@ bool Detections::apply(const ScanEvent& e, uint32_t now) {
   d.conf = e.conf;
   d.first = d.last = now;
   d.hits = 1;
+  if ((int)d.cat < (int)Cat::COUNT) ++seen_[(int)d.cat];  // cumulative tally
   ++seq_;
   return true;
 }
@@ -57,6 +58,8 @@ bool Detections::applyAirtag(const uint8_t key[6], uint32_t now) {
   air_[free].used = true;
   memcpy(air_[free].key, key, 6);
   air_[free].first = air_[free].last = now;
+  const int beacons = airtagBeacons();  // peak concurrent -> cumulative tracker tally
+  if (beacons > airtagPeak_) airtagPeak_ = (uint16_t)beacons;
   ++seq_;  // a new distinct beacon changes the displayed count
   return true;
 }
@@ -74,6 +77,11 @@ void Detections::ackCurrent() {
   for (int i = 0; i < MAXACK; ++i) ack_[i].used = false;  // rebuild from scratch
   auto add = [&](Cat c, const char* lab) {
     if (!lab) return;
+    // Only the alarming categories can raise the face, so only those are worth
+    // acking. Open Wi-Fi (and anything non-alerting) never stirs Zuse.
+    if (c != Cat::Attack && c != Cat::HackDev && c != Cat::Camera &&
+        c != Cat::Drone && c != Cat::Tracker)
+      return;
     if (isAcked(c, lab)) return;  // dedup
     for (int i = 0; i < MAXACK; ++i)
       if (!ack_[i].used) {
@@ -174,4 +182,16 @@ int Detections::count(Cat c) const {
   // The collapsed AirTag beacon is one logical tracker entry.
   if (c == Cat::Tracker && airtagBeacons() > 0) ++n;
   return n;
+}
+
+int Detections::seenCount(Cat c) const {
+  int n = seen_[(int)c];
+  if (c == Cat::Tracker) n += airtagPeak_;  // peak airtags, not every MAC
+  return n;
+}
+
+void Detections::resetCounts() {
+  for (int i = 0; i < (int)Cat::COUNT; ++i) seen_[i] = 0;
+  airtagPeak_ = 0;
+  ++seq_;
 }

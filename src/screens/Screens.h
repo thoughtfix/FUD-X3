@@ -298,9 +298,13 @@ class CategoryScreen : public ListScreen {
   void onSelect(int i, App& app) override;
 
  private:
+  static constexpr int MAXROWS = 64;
   Detections* det_ = nullptr;
   DetailScreen* detail_ = nullptr;
   Cat cat_ = Cat::None;
+  DetView views_[MAXROWS];   // snapshot for display order (Open Wi-Fi sorts by name)
+  int slot_[MAXROWS] = {0};  // original store index, so detail opens the right one
+  int n_ = 0;
 };
 
 // One device, all the detail we have. NEXT/PREV step to sibling devices.

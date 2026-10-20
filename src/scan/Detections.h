@@ -30,6 +30,8 @@ class Detections {
   void tick(uint32_t now);  // age out expired entries
 
   int count(Cat c) const;   // distinct active entries (AirTags collapse to 1)
+  int seenCount(Cat c) const;  // cumulative distinct seen since the last reset
+  void resetCounts();          // clear the cumulative tally (new day / manual)
   int airtagBeacons() const;  // distinct active AirTag MACs
   uint32_t seq() const { return seq_; }  // bumps whenever counts change
 
@@ -82,6 +84,12 @@ class Detections {
   Det d_[MAXDET] = {};
   Air air_[MAXAIR] = {};
   AckSig ack_[MAXACK] = {};
+  // Cumulative "seen this period" tally for the headline counts (home + scan
+  // summaries). Lives apart from the evicting live store so the numbers don't
+  // drop to zero as devices leave. AirTags use a peak-concurrent figure so one
+  // MAC-hopping tag doesn't run the tracker tally up.
+  uint16_t seen_[(int)Cat::COUNT] = {};
+  uint16_t airtagPeak_ = 0;
   uint32_t seq_ = 0;
 
   bool applyAirtag(const uint8_t key[6], uint32_t now);  // true if a new MAC

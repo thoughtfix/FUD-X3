@@ -9,6 +9,7 @@
 #include <Arduino.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>  // strcasecmp
 #include <SDCardManager.h>
 
 // ---------- ListScreen ----------
@@ -131,7 +132,7 @@ void ZuseScreen::body(App& app, int topY, int bottomY) {
                         Cat::Attack};
     char line[32];
     for (Cat cat : cats) {
-      snprintf(line, sizeof(line), "%s: %d", catName(cat), det_->count(cat));
+      snprintf(line, sizeof(line), "%s: %d", catName(cat), det_->seenCount(cat));
       y = gfx::clippedLine(c, 40, y, FUD_W - 16, line, 3, FUD_BLACK) + 2;
     }
   }
@@ -165,9 +166,9 @@ void ZuseScreen::hints(const char* out[6]) {
 
 // ---------- SettingsScreen ----------
 
-static const char* kSettings[] = {"Set Clock",   "Logging",     "Auto Sleep",
-                                  "Baseline",    "Ignore List", "SD Card",
-                                  "Delete Logs", "Battery Test"};
+static const char* kSettings[] = {"Set Clock",    "Logging",     "Auto Sleep",
+                                  "Baseline",     "Reset Counts", "Ignore List",
+                                  "SD Card",      "Delete Logs", "Battery Test"};
 
 int SettingsScreen::count() {
   return (int)(sizeof(kSettings) / sizeof(kSettings[0]));
@@ -204,6 +205,11 @@ void SettingsScreen::onSelect(int i, App& app) {
     det_->baseline(millis());
     info_->open("Baseline", "Set. Everything here is now known; only new "
                             "devices will stir Zuse.");
+    app.go(info_);
+  } else if (!strcmp(item, "Reset Counts") && det_ && info_) {
+    det_->resetCounts();
+    info_->open("Reset Counts", "Tally cleared. Counts start over from zero; "
+                                "the lists of nearby devices are untouched.");
     app.go(info_);
   } else if (!strcmp(item, "Logging") && option_) {
     option_->open("Logging", kLogOpts, 2, config.logging ? 0 : 1, pickLogging);
@@ -733,7 +739,7 @@ void ScanSummaryScreen::label(int i, char* buf, size_t n) {
     snprintf(buf, n, "%s  >", kRows[i].name);  // Wi-Fi: a view, not a count
     return;
   }
-  const int c = det_ ? det_->count(kRows[i].cat) : 0;
+  const int c = det_ ? det_->seenCount(kRows[i].cat) : 0;
   snprintf(buf, n, "%s  (%d)", kRows[i].name, c);
 }
 
@@ -776,7 +782,33 @@ void WifiNetScreen::label(int i, char* buf, size_t n) {
 
 // ---------- CategoryScreen ----------
 
-int CategoryScreen::count() { return det_ ? det_->count(cat_) : 0; }
+int CategoryScreen::count() {
+  const int c = det_ ? det_->count(cat_) : 0;
+  n_ = 0;
+  for (int k = 0; k < c && n_ < MAXROWS; ++k) {
+    if (det_->viewAt(cat_, k, views_[n_])) {
+      slot_[n_] = k;
+      ++n_;
+    }
+  }
+  // Open Wi-Fi is a reference list, so order it by network name, not by when
+  // each was last seen. Other categories keep store order (newest-ish first).
+  if (cat_ == Cat::OpenWifi) {
+    for (int i = 1; i < n_; ++i) {
+      DetView v = views_[i];
+      int s = slot_[i];
+      int j = i - 1;
+      while (j >= 0 && strcasecmp(views_[j].name, v.name) > 0) {
+        views_[j + 1] = views_[j];
+        slot_[j + 1] = slot_[j];
+        --j;
+      }
+      views_[j + 1] = v;
+      slot_[j + 1] = s;
+    }
+  }
+  return n_;
+}
 
 // Humanize a duration, and an emphasis marker that grows the longer a device
 // has been hanging around (stuck-with-you).
@@ -795,24 +827,26 @@ static const char* emphasis(uint32_t presentMs) {
 }
 
 void CategoryScreen::label(int i, char* buf, size_t n) {
-  DetView v;
-  if (!det_ || !det_->viewAt(cat_, i, v)) {
+  if (i < 0 || i >= n_) {
     snprintf(buf, n, "-");
     return;
   }
+  const DetView& v = views_[i];
   const uint32_t present = millis() - v.firstSeen;
   char dur[12];
   humanDur(present, dur, sizeof(dur));
+  // For open Wi-Fi the SSID (name) is the useful identifier, not "Open".
+  const char* lbl = (cat_ == Cat::OpenWifi && v.name[0]) ? v.name : v.label;
   if (v.collapsed)
-    snprintf(buf, n, "%s (%d)  %s%s", v.label, v.collapsedCount, dur,
+    snprintf(buf, n, "%s (%d)  %s%s", lbl, v.collapsedCount, dur,
              emphasis(present));
   else
-    snprintf(buf, n, "%s  %s%s", v.label, dur, emphasis(present));
+    snprintf(buf, n, "%s  %s%s", lbl, dur, emphasis(present));
 }
 
 void CategoryScreen::onSelect(int i, App& app) {
-  if (!detail_) return;
-  detail_->open(cat_, i);
+  if (!detail_ || i < 0 || i >= n_) return;
+  detail_->open(cat_, slot_[i]);  // map display row back to its store index
   app.go(detail_);
 }
 
