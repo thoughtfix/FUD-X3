@@ -29,10 +29,11 @@ class Detections {
   bool apply(const ScanEvent& e, uint32_t now);  // true if a new entry
   void tick(uint32_t now);  // age out expired entries
 
-  int count(Cat c) const;   // distinct active entries (AirTags collapse to 1)
+  int count(Cat c) const;   // distinct active entries (hoppers collapse per type)
   int seenCount(Cat c) const;  // cumulative distinct seen since the last reset
   void resetCounts();          // clear the cumulative tally (new day / manual)
-  int airtagBeacons() const;  // distinct active AirTag MACs
+  int airtagBeacons() const;   // distinct active AirTag MACs
+  int airtagSeen() const { return airtagAtPeak_; }  // airtag share of the tally
   uint32_t seq() const { return seq_; }  // bumps whenever counts change
 
   // Acknowledge: snapshot every threat currently present as "known" so Zuse
@@ -65,9 +66,13 @@ class Detections {
     uint32_t last;
     uint32_t hits;
   };
+  // One live MAC of a privacy-hopping tracker (AirTag/Tile/SmartTag/GoogleFMD).
+  // These rotate their address, so they are collapsed per type into a single
+  // "beacon" count instead of being counted as many distinct devices.
   struct Air {
     bool used;
     uint8_t key[6];
+    const char* label;  // hopper type ("AirTag", "Tile", ...)
     uint32_t first;
     uint32_t last;
   };
@@ -89,10 +94,16 @@ class Detections {
   // drop to zero as devices leave. AirTags use a peak-concurrent figure so one
   // MAC-hopping tag doesn't run the tracker tally up.
   uint16_t seen_[(int)Cat::COUNT] = {};
-  uint16_t airtagPeak_ = 0;
+  uint16_t hopperPeak_ = 0;    // peak concurrent total hopper beacons
+  uint16_t airtagAtPeak_ = 0;  // AirTag beacons at that peak (for the % AirTag)
   uint32_t seq_ = 0;
 
-  bool applyAirtag(const uint8_t key[6], uint32_t now);  // true if a new MAC
+  bool applyHopper(const uint8_t key[6], const char* label, uint32_t now);
+  void updateHopperPeak();
+  int beaconCount(const char* label) const;  // live MACs of one hopper type
+  // Distinct hopper types present now; fills parallel arrays, returns the count.
+  int presentHoppers(const char* labels[], int counts[], uint32_t newest[],
+                     int max) const;
   bool isAcked(Cat c, const char* label) const;
   void ackCurrent();  // replace ack_ with a snapshot of what's present now
 };

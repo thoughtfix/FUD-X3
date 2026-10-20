@@ -128,11 +128,18 @@ void ZuseScreen::body(App& app, int topY, int bottomY) {
 
   // Plain detection counts (always shown).
   if (det_) {
-    const Cat cats[] = {Cat::Tracker, Cat::Camera, Cat::Drone, Cat::HackDev,
-                        Cat::Attack};
-    char line[32];
+    const Cat cats[] = {Cat::Tracker, Cat::Camera,  Cat::Drone,
+                        Cat::HackDev, Cat::Attack,   Cat::OpenWifi};
+    char line[40];
     for (Cat cat : cats) {
-      snprintf(line, sizeof(line), "%s: %d", catName(cat), det_->seenCount(cat));
+      const int tot = det_->seenCount(cat);
+      // Trackers are dominated by AirTags in public; show their share.
+      if (cat == Cat::Tracker && tot > 0 && det_->airtagSeen() > 0) {
+        snprintf(line, sizeof(line), "%s: %d (%d%% AirTag)", catName(cat), tot,
+                 det_->airtagSeen() * 100 / tot);
+      } else {
+        snprintf(line, sizeof(line), "%s: %d", catName(cat), tot);
+      }
       y = gfx::clippedLine(c, 40, y, FUD_W - 16, line, 3, FUD_BLACK) + 2;
     }
   }
