@@ -29,9 +29,10 @@ until something new arrives. When the battery gets low, Zuse lets you know.
 Detections are grouped into categories you can drill into for per-device detail
 (name, address, signal, and how long it has been hanging around):
 
-- Trackers: AirTag and Find My beacons (collapsed into a single count, since
-  they rotate their address), plus fixed-identity tags like Tile, SmartTag, and
-  Chipolo.
+- Trackers: AirTag / Find My, Tile, SmartTag, and Google Find My. These rotate
+  their Bluetooth address for privacy, so each type is collapsed into a single
+  beacon count rather than counted as many separate devices. The Trackers line
+  on the home screen also shows what share of them are AirTags.
 - Cameras: known wireless camera signatures.
 - Drones: ASTM F3411 / Open Drone ID Remote ID broadcasts.
 - Hacker Devices: Flipper Zero, Pwnagotchi, card-skimmer modules, and similar.
@@ -39,6 +40,13 @@ Detections are grouped into categories you can drill into for per-device detail
   access points.
 - Open Wi-Fi: open networks with no threat signature, logged for context (not an
   alert).
+
+The home screen tallies how many of each category you have seen. The counts are
+a cumulative tally for the session, so they do not drop to zero as devices move
+out of range; they reset at local midnight (when the clock is set) or via
+Settings > Reset Counts. Drilling into a category still shows what is currently
+nearby, with how long each device has lingered (emphasis grows the longer
+something stays with you).
 
 There is also a live Wi-Fi Networks view that lists what the last scan saw,
 sorted by signal strength, with open networks tagged.
@@ -56,10 +64,16 @@ Four buttons sit on the front (A, B, C, D) with two more on the sides
 title bar with the current time and battery level across the top, and a hint bar
 across the bottom so you always know what the active buttons do.
 
-- Home screen: A or Left opens Settings, D or Right opens Scan Summaries, B
-  acknowledges an active alert.
+- Home screen: A or the left edge opens Settings, D or the right edge opens Scan
+  Summaries, B acknowledges an active alert (it calms the face and icon only; it
+  does not change the counts).
 - Lists: A moves up, B moves down, C goes back, D opens the highlighted item.
-  The side buttons step between sibling items.
+- Side edges are consistent everywhere: the left edge goes back / escape, and
+  the right edge opens or goes forward into the highlighted item. Inside a detail
+  view they step between devices instead. (Destructive confirmations are never
+  bound to an edge, so an edge press can't delete anything.)
+- Set Clock: A/B change the selected field, the side edges pick the field, D
+  saves, C cancels.
 - Power button: a short press shows the sleep screen and deep-sleeps (press
   again to wake). Holding A from anywhere returns to the Zuse home screen.
 
@@ -74,6 +88,8 @@ across the bottom so you always know what the active buttons do.
   battery runs out.
 - Baseline: mark everything currently seen as known, so only new devices stir
   Zuse.
+- Reset Counts: clear the cumulative detection tally back to zero. The lists of
+  currently-nearby devices are left untouched.
 - Ignore List: drop your own known devices and networks from alerts.
 - SD Card: card status, log file count, and size.
 - Delete Logs: remove log files, scoped to Today, This Week, or All.
@@ -81,6 +97,8 @@ across the bottom so you always know what the active buttons do.
   battery percentage, voltage, and current to the SD card every minute until the
   device dies. The e-ink display holds the final elapsed time after it powers
   off.
+- About: firmware version, source link, license, open-source component credits,
+  and where the detection signatures come from.
 
 ## Logging
 
