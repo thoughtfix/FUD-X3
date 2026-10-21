@@ -91,6 +91,15 @@ class InfoScreen : public Screen {
   const char* msg_ = "";
 };
 
+// About: version, source link, license, and open-source disclosures.
+class AboutScreen : public Screen {
+ public:
+  const char* title() override { return "About"; }
+  void body(App& app, int topY, int bottomY) override;
+  void onButton(Btn b, App& app) override;
+  void hints(const char* out[6]) override;
+};
+
 // Set the RTC by hand: A/B adjust the active field, D moves to the next field,
 // C saves. Hold-A (home) cancels without saving.
 class SetClockScreen : public Screen {
@@ -204,7 +213,7 @@ class SettingsScreen : public ListScreen {
   void link(SetClockScreen* setClock, SdCardScreen* sdCard,
             DeleteLogsScreen* deleteLogs, OptionScreen* option,
             IgnoreListScreen* ignoreList, InfoScreen* info, Detections* det,
-            BatteryTestScreen* batteryTest) {
+            BatteryTestScreen* batteryTest, AboutScreen* about) {
     setClock_ = setClock;
     sdCard_ = sdCard;
     deleteLogs_ = deleteLogs;
@@ -213,6 +222,7 @@ class SettingsScreen : public ListScreen {
     info_ = info;
     det_ = det;
     batteryTest_ = batteryTest;
+    about_ = about;
   }
   const char* title() override { return "Settings"; }
   bool showMascot() override { return true; }
@@ -231,6 +241,7 @@ class SettingsScreen : public ListScreen {
   InfoScreen* info_ = nullptr;
   Detections* det_ = nullptr;
   BatteryTestScreen* batteryTest_ = nullptr;
+  AboutScreen* about_ = nullptr;
 };
 
 // The informational live Wi-Fi list (SSID + signal), the sole ex-"Toy". Shows

@@ -231,11 +231,8 @@ void SettingsScreen::onSelect(int i, App& app) {
   } else if (!strcmp(item, "Battery Test") && batteryTest_) {
     batteryTest_->open();
     app.go(batteryTest_);
-  } else if (!strcmp(item, "About") && info_) {
-    info_->open("About", "FUD-X3 " FUDX3_VERSION
-                         ". Passive, receive-only counter-surveillance "
-                         "firmware. github.com/thoughtfix/FUD-X3");
-    app.go(info_);
+  } else if (!strcmp(item, "About") && about_) {
+    app.go(about_);
   } else if (!strcmp(item, "Ignore List") && ignoreList_) {
     ignoreList_->open();
     app.go(ignoreList_);
@@ -343,6 +340,51 @@ void InfoScreen::onButton(Btn b, App& app) {
 }
 
 void InfoScreen::hints(const char* out[6]) {
+  out[0] = "";
+  out[1] = "";
+  out[2] = "Back";
+  out[3] = "";
+  out[4] = "";
+  out[5] = "";
+}
+
+// ---------- AboutScreen ----------
+
+void AboutScreen::body(App& app, int topY, int bottomY) {
+  Adafruit_GFX& c = app.display().cv();
+  const int X = 16;
+  int y = topY + 4;
+  auto line = [&](const char* s, int size, int gap) {
+    y = gfx::wrapText(c, X, y, FUD_W - X, bottomY, s, size, FUD_BLACK) + gap;
+  };
+
+  line("FUD-X3  " FUDX3_VERSION, 4, 8);
+  line("Passive counter-surveillance for the XTEINK X3 (ESP32-C3). "
+       "Receive-only; it never transmits.",
+       3, 12);
+
+  line("Source", 3, 0);
+  line("github.com/thoughtfix/FUD-X3", 2, 8);
+  line("License: GPL-3.0 (see LICENSE)", 3, 12);
+
+  line("Open-source components:", 3, 2);
+  line("- community-sdk HAL (MIT)", 2, 0);
+  line("- NimBLE-Arduino (Apache-2.0)", 2, 0);
+  line("- Adafruit GFX (BSD), Adafruit BusIO (MIT)", 2, 0);
+  line("- SdFat (MIT)", 2, 0);
+  line("- ESP32 Arduino core (LGPL-2.1 / Apache-2.0)", 2, 12);
+
+  line("Signatures are public facts from the IEEE OUI registry, Bluetooth SIG "
+       "assigned numbers, ASTM Remote ID, and the FCC ID database.",
+       2, 12);
+  line("Built " __DATE__, 2, 0);
+}
+
+void AboutScreen::onButton(Btn b, App& app) {
+  if (b == Btn::C || b == Btn::A) app.back();
+}
+
+void AboutScreen::hints(const char* out[6]) {
   out[0] = "";
   out[1] = "";
   out[2] = "Back";

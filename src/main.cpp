@@ -48,6 +48,7 @@ static OptionScreen option;
 static IgnoreListScreen ignoreList;
 static InfoScreen info;
 static BatteryTestScreen batteryTest;
+static AboutScreen about;
 
 // Draw a full-screen message with a Zuse face (e-ink keeps it shown with no
 // power) and deep-sleep until the power button is pressed, which reboots.
@@ -107,7 +108,7 @@ void setup() {
   deleteLogs.link(&sd, &clk);
   batteryTest.link(&sd, &clk);
   settings.link(&setClock, &sdCard, &deleteLogs, &option, &ignoreList, &info,
-                &detections, &batteryTest);
+                &detections, &batteryTest, &about);
 
   // Bring the RTC and SD up before the first paint so the home screen shows the
   // correct state (not a transient "INSERT SD CARD").
