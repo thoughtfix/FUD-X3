@@ -187,12 +187,26 @@ void App::tick() {
     lastActivity_ = now;
     home();
   } else {
-    const Btn b = in_.takePress();
+    Btn b = in_.takePress();
     if (b != Btn::None) lastActivity_ = now;
     if (b == Btn::Power) {
       if (onPower_) onPower_();  // sleep (handled globally)
     } else if (b != Btn::None && cur()) {
-      cur()->onButton(b, *this);
+      // Edge-button defaults: if a screen doesn't claim a side button (blank
+      // hint for that side), the LEFT edge escapes (acts as Back/Cancel, C) and
+      // the RIGHT edge goes forward (acts as D) where that's a safe "Open" —
+      // never a destructive confirm like "Remove" or "Yes". Screens that use
+      // the edges themselves (home, Set Clock, Detail siblings) keep their map.
+      if (b == Btn::Prev || b == Btn::Next) {
+        const char* h[6] = {"", "", "", "", "", ""};
+        cur()->hints(h);
+        if (b == Btn::Prev) {
+          if (!h[4][0]) b = Btn::C;  // unclaimed left edge -> escape
+        } else {                     // Btn::Next
+          if (!h[5][0]) b = (strcmp(h[3], "Open") == 0) ? Btn::D : Btn::None;
+        }
+      }
+      if (b != Btn::None) cur()->onButton(b, *this);
     }
   }
 
